@@ -8,14 +8,19 @@ app.listen(3000, () => {
 const {adminAuth,userAuth} = require("./middlewares/auth");
 
 // "/user" API will be called only when userAuth is valid
-app.use("/user",userAuth);
-
-// "/admin" API will be called only when adminAuth is valid
-app.use("/admin",adminAuth);
-
-app.get("/user",(req,res,next) => {
+app.get("/user",userAuth,(req,res,next) => {
     res.send("User access");
 });
-app.get("/admin",(req,res)=>{
+
+//Login API can be accessed by anyone
+app.get("/user/login",(req,res,next) => {
+    res.send("Logged in successfully");
+});
+
+// "/admin" API will be called only when adminAuth is valid
+app.get("/admin",adminAuth,(req,res)=>{
     res.send("Admin access");
 });
+
+
+
