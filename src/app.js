@@ -1,23 +1,21 @@
-// Import the Express module
-const express = require('express');
-
-// Create an Express application
+const express = require("express");
 const app = express();
-
-// This is the request handler, it will handle requests based on the URL
-// Here, localhost:3000/test will be handlled by this
-app.use("/hello",(req,res)=>{
-    res.send("Hello HelloHelloHelloHelloHelloHelloHelloHelloHello ");
+app.listen(3000, () => {
+  console.log("Server is successfully up and running on port 3000.......");
 });
 
-app.use("/test",(req,res)=>{
-    res.send("test testtesttesttesttesttesttesttesttesttesttesttest");
+//Importing 
+const {adminAuth,userAuth} = require("./middlewares/auth");
+
+// "/user" API will be called only when userAuth is valid
+app.use("/user",userAuth);
+
+// "/admin" API will be called only when adminAuth is valid
+app.use("/admin",adminAuth);
+
+app.get("/user",(req,res,next) => {
+    res.send("User access");
 });
-
-// This line is used to start the server and make it listen for incoming requests on a specified port.
-// app.listen(port, callback)
-app.listen(3000, ()=>{
-    console.log("Server is successfully up and running on port 3000.......");
+app.get("/admin",(req,res)=>{
+    res.send("Admin access");
 });
-
-
