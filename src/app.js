@@ -1,18 +1,12 @@
 const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
-
-//Importing the User model
 const User = require("./models/user");
+app.use(express.json());
 //Creating an API to save user inside the database using the model
 app.post("/signup", async (req, res) => {
-  const user = new User({
-    firstName: "Ankur",
-    lastName: "Srivastava",
-    emailId: "ankur@gmail.com",
-    password: "ankur123",
-  });
-
+  const user = new User(req.body);
+  console.log(user);
   try {
     await user.save();
     res.send("User added successfully");
