@@ -41,6 +41,17 @@ app.get("/feed", async (req, res) => {
   }
 });
 
+//Delete user
+app.delete("/deleteUser", async (req, res) => {
+  const userId = req.body.userId;
+  try {
+    const user = await User.findByIdAndDelete({_id:userId});
+    res.send("User Deleted successfully");
+  } catch (error) {
+    res.status(400).send("Cannot delete user");
+  }
+});
+
 connectDB()
   // If the connection is successful, this '.then()' block runs.
   // It listens on the server only when the connection is established
