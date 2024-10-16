@@ -2,16 +2,50 @@ const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
+const { validateSignUpData } = require("./utils/validation");
+const bcrypt = require("bcrypt");
 app.use(express.json());
+
 //Creating an API to save user inside the database using the model
 app.post("/signup", async (req, res) => {
-  const user = new User(req.body);
-  console.log(user);
   try {
+    //First Validate the incoming data
+    validateSignUpData(req);
+    //Get the password from req body
+    const { firstName, lastName, emailId, password } = req.body;
+    //Encrypt the password
+    const passwordHash = await bcrypt.hash(password, 10);
+    console.log("passwordHash: " + passwordHash);
+    const user = new User({
+      firstName,
+      lastName,
+      emailId,
+      password: passwordHash,
+    });
+    // const user = new User(req.body);
+    console.log(user);
     await user.save();
     res.send("User added successfully");
   } catch (error) {
-    res.status(400).send(`${error.message}`);
+    res.status(400).send(`Error: ${error.message}`);
+  }
+});
+
+app.post("/login", async (req, res) => {
+  try {
+    const { emailId, password } = req.body;
+    const user = await User.findOne({ emailId: emailId });
+    if (!user) {
+      throw new Error("Invalid Credentials");
+    }
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (isPasswordValid) {
+      res.send("Login Successfull");
+    } else {
+      throw new Error("Password entered is not correct.Please try again!!!");
+    }
+  } catch (error) {
+    res.status(400).send(`Error: ${error.message}`);
   }
 });
 
@@ -66,7 +100,7 @@ app.patch("/update/:userId", async (req, res) => {
     if (!isUpdateAllowed) {
       throw new Error("Sorry for the inconvenience, Update is not allowed");
     }
-    if(data?.skills.length>10){
+    if (data?.skills.length > 10) {
       throw new Error("Sorry, skills cannot be more than 10.");
     }
     const updatedUser = await User.findByIdAndUpdate(userId, data, {
