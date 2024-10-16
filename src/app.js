@@ -11,7 +11,7 @@ app.post("/signup", async (req, res) => {
     await user.save();
     res.send("User added successfully");
   } catch (error) {
-    res.status(400).send("Error saving user");
+    res.status(400).send(`${error.message}`);
   }
 });
 
@@ -55,11 +55,24 @@ app.delete("/deleteUser", async (req, res) => {
 // Updating data of the user
 // Any data which is not a part of the original schema will be ignored by mongoose
 // its not like it will create a new field in the schema
-app.patch("/update", async (req, res) => {
-  const userId = req.body.userId;
+app.patch("/update/:userId", async (req, res) => {
+  const userId = req.params?.userId;
   const data = req.body;
   try {
-    const updatedUser = await User.findByIdAndUpdate(userId, data,{returnDocument:"After",runValidators:true});
+    const allowedUpdates = ["photoURL", "about", "skills", "age"];
+    const isUpdateAllowed = Object.keys(data).every((k) =>
+      allowedUpdates.includes(k)
+    );
+    if (!isUpdateAllowed) {
+      throw new Error("Sorry for the inconvenience, Update is not allowed");
+    }
+    if(data?.skills.length>10){
+      throw new Error("Sorry, skills cannot be more than 10.");
+    }
+    const updatedUser = await User.findByIdAndUpdate(userId, data, {
+      returnDocument: "After",
+      runValidators: true,
+    });
     console.log(updatedUser);
     // const updatedUser = await User.findByIdAndUpdate({_id:userId}, data);
     if (!updatedUser) {
@@ -67,7 +80,7 @@ app.patch("/update", async (req, res) => {
     }
     res.send("User updated successfully");
   } catch (error) {
-    res.status(400).send("Something went wrong");
+    res.status(400).send(`Error: ${error.message}`);
   }
 });
 
