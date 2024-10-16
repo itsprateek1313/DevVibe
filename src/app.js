@@ -45,10 +45,29 @@ app.get("/feed", async (req, res) => {
 app.delete("/deleteUser", async (req, res) => {
   const userId = req.body.userId;
   try {
-    const user = await User.findByIdAndDelete({_id:userId});
+    const user = await User.findByIdAndDelete({ _id: userId });
     res.send("User Deleted successfully");
   } catch (error) {
     res.status(400).send("Cannot delete user");
+  }
+});
+
+// Updating data of the user
+// Any data which is not a part of the original schema will be ignored by mongoose
+// its not like it will create a new field in the schema
+app.patch("/update", async (req, res) => {
+  const userId = req.body.userId;
+  const data = req.body;
+  try {
+    const updatedUser = await User.findByIdAndUpdate(userId, data);
+    console.log(updatedUser);
+    // const updatedUser = await User.findByIdAndUpdate({_id:userId}, data);
+    if (!updatedUser) {
+      return res.status(404).send("User not found");
+    }
+    res.send("User updated successfully");
+  } catch (error) {
+    res.status(400).send("Something went wrong");
   }
 });
 
