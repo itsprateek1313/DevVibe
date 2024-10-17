@@ -7,6 +7,8 @@ const bcrypt = require("bcrypt");
 const cookieParser = require("cookie-parser");
 app.use(cookieParser());
 app.use(express.json());
+const jwt = require('jsonwebtoken');
+
 
 //Creating an API to save user inside the database using the model
 app.post("/signup", async (req, res) => {
@@ -44,7 +46,7 @@ app.get("/profile", async (req, res) => {
     }
 
     // Verify the JWT token
-    const decodedMessage = jwt.verify(token, "DEV@VIBE790");
+    const decodedMessage = jwt.verify(token, "DEV@VIBE#159");
     const { emailId, _id } = decodedMessage; // Extract emailId and _id from token
 
     // Find user by the _id extracted from the token
@@ -75,7 +77,7 @@ app.post("/login", async (req, res) => {
     if (isPasswordValid) {
       //Create JWT token
       const token = jwt.sign(
-        { _id: user._id, userEmail: userEmail },
+        { _id: user._id, emailId: emailId },
         "DEV@VIBE#159"
       );
       //Add this token to the cookies and send this response back to the user
