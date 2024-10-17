@@ -4,6 +4,8 @@ const app = express();
 const User = require("./models/user");
 const { validateSignUpData } = require("./utils/validation");
 const bcrypt = require("bcrypt");
+const cookieParser = require("cookie-parser");
+app.use(cookieParser());
 app.use(express.json());
 
 //Creating an API to save user inside the database using the model
@@ -31,6 +33,37 @@ app.post("/signup", async (req, res) => {
   }
 });
 
+app.get("/profile", async (req, res) => {
+  try {
+    //Getting the token --> const cookies = req.cookies; const { token } = cookies;
+    const token = req.cookies.token;
+  
+    // Check if the token is provided
+    if (!token) {
+      return res.status(401).send("Access Denied: No token provided");
+    }
+
+    // Verify the JWT token
+    const decodedMessage = jwt.verify(token, "DEV@VIBE790");
+    const { emailId, _id } = decodedMessage; // Extract emailId and _id from token
+
+    // Find user by the _id extracted from the token
+    const user = await User.findById(_id);
+
+    // If the user exists, send a success message
+    if (user) {
+      res.send(`Welcome back, ${emailId}`);
+    } else {
+      // If user does not exist, send an error
+      throw new Error(`User with email ${emailId} does not exist.`);
+    }
+  } catch (error) {
+    // Proper error handling
+    res.status(400).send(`Error: ${error.message}`);
+  }
+});
+
+
 app.post("/login", async (req, res) => {
   try {
     const { emailId, password } = req.body;
@@ -40,6 +73,13 @@ app.post("/login", async (req, res) => {
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (isPasswordValid) {
+      //Create JWT token
+      const token = jwt.sign(
+        { _id: user._id, userEmail: userEmail },
+        "DEV@VIBE#159"
+      );
+      //Add this token to the cookies and send this response back to the user
+      res.cookie("token", token, { httpOnly: true });
       res.send("Login Successfull");
     } else {
       throw new Error("Password entered is not correct.Please try again!!!");
