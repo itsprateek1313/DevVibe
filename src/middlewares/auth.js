@@ -1,25 +1,27 @@
-const adminAuth = (req, res, next) => {
-  console.log("Admin authentication is getting checked...");
-  const token = "xyscz";
-  const isAdminAuthorized = token === "xyz";
-  if (!isAdminAuthorized) {
-    res.status(401).send("Forbidden: Only admins can access all data");
-  } else {
+const jwt = require("jsonwebtoken");
+const User = require("../models/user");
+
+//Token checking
+const userAuth = async (req, res, next) => {
+  try {
+    const token = req.cookies.token;
+    if (!token) {
+      throw new Error("Token not valid!!!!");
+    }
+    const decodedMessage = await jwt.verify(token, "DEV@VIBE#159");
+    const { _id } = decodedMessage;
+    const user = await User.findById(_id);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    req.user = user;
+    // Pass control to the next middleware/route handle
     next();
-  }
-};
-const userAuth = (req, res, next) => {
-  console.log("User authentication is getting checked...");
-  const token = "xyz";
-  const isAdminAuthorized = token === "xyz";
-  if (!isAdminAuthorized) {
-    res.status(401).send("Forbidden: Only users are allowed");
-  } else {
-    next();
+  } catch (error) {
+    res.status(400).send(`ERROR: ${error.message}`);
   }
 };
 
 module.exports = {
-  adminAuth,
   userAuth,
 };
