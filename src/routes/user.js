@@ -3,7 +3,7 @@ const { userAuth } = require("../middlewares/auth");
 const userRouter = express.Router();
 const ConnectionRequest = require("../models/connectionRequest");
 const USER_SAFE_DATA = "firstName lastName photoURL age gender about skills";
-
+const User = require("../models/user");
 //This API gets all the pending(only interested) connection requests
 //for the logged in user
 userRouter.get("/user/requests/received", userAuth, async (req, res) => {
@@ -39,10 +39,10 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
       .populate("toUserId", USER_SAFE_DATA);
 
     const data = connectionRequests.map((row) => {
-        if(row.fromUserId._id.toString()===loggedInUser.toString()){
-            return row.toUserId;
-        }
-        return row.fromUserId;
+      if (row.fromUserId._id.toString() === loggedInUser.toString()) {
+        return row.toUserId;
+      }
+      return row.fromUserId;
     });
     res.json({ data });
   } catch (error) {
@@ -50,5 +50,35 @@ userRouter.get("/user/connections", userAuth, async (req, res) => {
   }
 });
 
+//In the feed users should see all the users except:
+// 1. own profile
+// 2. his accepted connections already
+// 3. ignored people
+// 4. already sent connection requests ie pending ones
+userRouter.get("/feed", userAuth, async (req, res) => {
+  try {
+    const loggedInUser = req.user;
+    const connectionRequests = await ConnectionRequest.find({
+      $or: [{ fromUserId: loggedInUser._id }, { toUserId: loggedInUser._id }],
+    }).select("fromUserId toUserId");
+
+    const hidesUserFromFeed = new Set();
+
+    connectionRequests.forEach((req) => {
+      hidesUserFromFeed.add(req.fromUserId.toString());
+      hidesUserFromFeed.add(req.toUserId.toString());
+    });
+
+    const users = await User.find({
+      $and: [
+        { _id: { $nin: Array.from(hidesUserFromFeed) } },
+        { _id: { $ne: loggedInUser._id } },
+      ],
+    }).select(USER_SAFE_DATA);
+    res.send(users);
+  } catch (error) {
+    res.status(400).send(`ERROR:${error.message}`);
+  }
+});
 
 module.exports = userRouter;
