@@ -21,7 +21,8 @@ requestRouter.post(
       }
 
       const toUser = await User.findById(toUserId);
-      if(!toUser){
+      if (!toUser) {
+        console.log(toUser);
         return res.status(400).send(`User not found`);
       }
 
@@ -50,6 +51,47 @@ requestRouter.post(
         message: `Connection Request sent successfully.`,
         data,
       });
+    } catch (error) {
+      res.status(400).send(`ERROR: ${error.message}`);
+    }
+  }
+);
+
+
+//API to accept or reject connections request
+//Logged In user will send :status (accepted or rejected) and :requestId
+requestRouter.post(
+  "/request/review/:status/:requestId",
+  userAuth,
+  async (req, res) => {
+    try {
+      //Getting the logged In user and status,requestId
+      //Logged In user Id = toUserId
+      const loggedInUser = req.user;
+      const {status,requestId} = req.params;
+      //Only "accepted" or "rejected" are allowed
+      const allowedStatus = ["accepted","rejected"];
+      if(!allowedStatus.includes(status)){
+        return res.status(400).json({message:"Status not allowed"});
+      }
+      //Now find the connectionRequest which user wants
+      //user wants to see which people sent him request
+      const connectionRequest = await ConnectionRequest.findOne({
+        _id:requestId,
+        toUserId:loggedInUser._id,
+        status:"interested",
+      });
+      console.log(connectionRequest);
+      if(!connectionRequest){
+        return res.status(400).json({message:"Connection request not found!!!!!!!!!"});
+      }
+      //This line means connection is found
+      //In the request params user has also sent whther he is interest or not
+      //ie accepted,rejected,update the status of the requestId you found above
+      //accordingly
+      connectionRequest.status = status;
+      const data = await connectionRequest.save();
+      res.json({message:"Connection request "+ status, data});
     } catch (error) {
       res.status(400).send(`ERROR: ${error.message}`);
     }
